@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>은하 도장판 · 폴라나이트</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Pretendard:wght@400;500;600;700&display=swap');
+
+  :root{
+    --grad-1:#7C5CE8;
+    --grad-2:#8E7BEF;
+    --grad-3:#5FC3E8;
+    --card:#FFFFFF;
+    --card-soft:#F4F1FE;
+    --ink:#332B57;
+    --ink-soft:#8580A6;
+    --line:#E6E1FA;
+    --violet:#8A63E8;
+    --violet-deep:#6A45C9;
+    --sky:#3FB6DE;
+    --sky-deep:#2C93B8;
+    --gold:#FFC94D;
+    --shadow: rgba(90, 70, 160, 0.22);
+    --colorA:#3B7DE8;
+    --colorA-deep:#2557B8;
+    --colorB:#9457E0;
+    --colorB-deep:#7233BE;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family:'Pretendard', -apple-system, sans-serif;
+    background: linear-gradient(160deg, var(--grad-1) 0%, var(--grad-2) 45%, var(--grad-3) 100%);
+    background-attachment:fixed;
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 16px 60px;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  .stars{ position:fixed; inset:0; pointer-events:none; z-index:0; }
+  .stars span{ position:absolute; background:#fff; border-radius:50%; opacity:0.8; animation: twinkle 3.2s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{ opacity:0.25; transform:scale(0.8); } 50%{ opacity:0.95; transform:scale(1.15); } }
+  @media (prefers-reduced-motion: reduce){ .stars span{ animation:none; opacity:0.5; } }
+
+  .wrap{ max-width:1040px; margin:0 auto; position:relative; z-index:1; }
+
+  header{ text-align:center; padding:12px 12px 26px; color:#fff; }
+  .eyebrow{ font-family:'Gaegu', sans-serif; font-size:14px; letter-spacing:0.3em; opacity:0.85; margin-bottom:4px; }
+  h1{ font-family:'Gaegu', sans-serif; font-weight:700; font-size:34px; margin:0; text-shadow: 0 3px 12px rgba(60,30,110,0.35); }
+
+  .month-nav{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px; }
+  .month-nav button{
+    background:rgba(255,255,255,0.22); border:1.5px solid rgba(255,255,255,0.75); color:#fff;
+    width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center; transition:all .15s; backdrop-filter: blur(2px);
+  }
+  .month-nav button.year-btn{ width:30px; height:30px; font-size:13px; opacity:0.85; }
+  .month-nav button:hover{ background:rgba(255,255,255,0.4); transform:scale(1.06); }
+  .month-label{ font-family:'Gaegu', sans-serif; font-size:20px; font-weight:700; min-width:120px; }
+
+  .card{ background:var(--card); border-radius:26px; box-shadow: 0 24px 50px -20px var(--shadow); overflow:hidden; }
+
+  .master-section{ padding:24px 28px 22px; border-bottom:1px dashed var(--line); background:var(--card-soft); }
+  .master-header{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+  .master-toggle-icon{ font-size:15px; color:var(--violet-deep); transition:transform .25s ease; flex-shrink:0; }
+  .master-section.collapsed .master-toggle-icon{ transform:rotate(-90deg); }
+  .master-body{ margin-top:4px; overflow:hidden; max-height:600px; opacity:1; transition:max-height .3s ease, opacity .2s ease, margin .3s ease; }
+  .master-section.collapsed .master-body{ max-height:0; opacity:0; margin-top:0; pointer-events:none; }
+  .side-title{ font-family:'Gaegu', sans-serif; font-size:19px; font-weight:700; margin:0 0 4px; color:var(--violet-deep); }
+  .side-sub{ font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+
+  .owner-toggle{ display:flex; gap:8px; margin-bottom:10px; }
+  .owner-toggle button{
+    padding:7px 14px; border-radius:999px; font-size:12.5px; font-weight:700;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink-soft); cursor:pointer;
+    font-family:'Gaegu', sans-serif; transition:all .15s;
+  }
+  .owner-toggle button[data-owner="A"].is-picked{ background:var(--colorA); border-color:var(--colorA); color:#fff; }
+  .owner-toggle button[data-owner="B"].is-picked{ background:var(--colorB); border-color:var(--colorB); color:#fff; }
+
+  .todo-input-row{ display:flex; gap:6px; margin-bottom:14px; }
+  .todo-input-row input{
+    flex:1; padding:9px 12px; border:1.5px solid var(--line); border-radius:10px;
+    font-family:'Pretendard', sans-serif; font-size:13px; background:#fff; color:var(--ink);
+  }
+  .todo-input-row input:focus{ outline:none; border-color:var(--violet); }
+  .todo-input-row button.add-btn{
+    padding:9px 14px; background:var(--violet); color:#fff; border:none; border-radius:10px;
+    cursor:pointer; font-weight:700; font-size:13px; white-space:nowrap;
+  }
+  .todo-input-row button.add-btn:hover{ background:var(--violet-deep); }
+  .master-list-wrap{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px; }
+
+  .todo-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .todo-item{
+    display:flex; align-items:center; gap:9px; padding:8px 10px;
+    background:#fff; border:1.5px solid var(--line); border-radius:10px;
+  }
+  .todo-item input[type=checkbox]{ width:15px; height:15px; accent-color:var(--violet); cursor:pointer; flex-shrink:0; }
+  .owner-badge{
+    font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; color:#fff; flex-shrink:0;
+    font-family:'Gaegu', sans-serif;
+  }
+  .owner-badge.owner-A{ background:var(--colorA); }
+  .owner-badge.owner-B{ background:var(--colorB); }
+  .todo-item span.item-text{ flex:1; font-size:13.5px; word-break:break-word; }
+  .todo-item.done span.item-text{ text-decoration:line-through; color:var(--ink-soft); }
+  .todo-item .del{ cursor:pointer; color:var(--ink-soft); font-size:12px; padding:3px 7px; border-radius:8px; flex-shrink:0; }
+  .todo-item .del:hover{ background:var(--sky-deep); color:#fff; }
+  .empty-msg{ color:var(--ink-soft); font-size:12.5px; text-align:center; padding:14px 0; font-style:italic; }
+
+  .person-tabs{ display:none; gap:8px; padding:16px 20px 0; }
+  .person-tab-btn{
+    flex:1; padding:10px 12px; border-radius:12px; border:1.5px solid var(--line);
+    background:#fff; color:var(--ink-soft); font-weight:700; font-size:14px; cursor:pointer;
+    font-family:'Gaegu', sans-serif;
+  }
+  #tabA.is-active{ background:var(--colorA); color:#fff; border-color:var(--colorA); }
+  #tabB.is-active{ background:var(--colorB); color:#fff; border-color:var(--colorB); }
+
+  .persons-grid{ display:grid; grid-template-columns:1fr 1fr; }
+  .person-col{ padding:20px 24px 28px; }
+  .person-col.person-A{ border-right:1px dashed var(--line); }
+
+  .name-row{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .name-row .dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .person-A .dot{ background:var(--colorA); }
+  .person-B .dot{ background:var(--colorB); }
+  .name-input{
+    font-family:'Gaegu', sans-serif; font-weight:700; font-size:20px; color:var(--ink);
+    border:none; border-bottom:2px dashed var(--line); background:transparent; padding:2px 4px;
+    width:100%; max-width:180px;
+  }
+  .person-A .name-input:focus{ outline:none; border-color:var(--colorA); }
+  .person-B .name-input:focus{ outline:none; border-color:var(--colorB); }
+
+  .reward-row{ display:flex; align-items:center; gap:6px; margin-bottom:16px; }
+  .reward-row .gift{ font-size:14px; flex-shrink:0; }
+  .reward-input{
+    flex:1; font-size:12.5px; padding:7px 10px; border:1.5px dashed var(--line); border-radius:9px;
+    background:var(--card-soft); color:var(--ink); font-family:'Pretendard', sans-serif;
+  }
+  .person-A .reward-input:focus{ outline:none; border-color:var(--colorA); }
+  .person-B .reward-input:focus{ outline:none; border-color:var(--colorB); }
+
+  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:6px; }
+  .weekdays span{ text-align:center; font-size:11px; color:var(--ink-soft); font-weight:700; padding-bottom:6px; }
+
+  .grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .day{
+    aspect-ratio:1; border:1.5px solid var(--line); background:#FCFBFF; border-radius:9px;
+    position:relative; cursor:pointer; display:flex; flex-direction:column; padding:4px;
+    transition:transform .12s, box-shadow .12s, border-color .12s;
+  }
+  .day.empty{ visibility:hidden; }
+  .person-A .day:hover{ transform:translateY(-2px); box-shadow:0 8px 16px -8px var(--shadow); border-color:var(--colorA); }
+  .person-B .day:hover{ transform:translateY(-2px); box-shadow:0 8px 16px -8px var(--shadow); border-color:var(--colorB); }
+  .day.selected{ outline:2.5px solid var(--gold); outline-offset:-2.5px; }
+  .person-A .day.today .num{ color:var(--colorA-deep); font-weight:800; }
+  .person-B .day.today .num{ color:var(--colorB-deep); font-weight:800; }
+  .num{ font-size:11.5px; font-weight:600; color:var(--ink); font-variant-numeric: tabular-nums; z-index:1; position:relative; }
+
+  .stamp-mark{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-8deg);
+    width:84%; height:84%; display:flex; align-items:center; justify-content:center; pointer-events:none;
+  }
+  .stamp-mark.fail{ transform:translate(-50%,-50%) rotate(7deg); }
+  .stamp-mark img{ width:100%; height:100%; object-fit:contain; filter: drop-shadow(0 3px 5px rgba(60,30,110,0.35)); }
+  .stamp-mark .default-mark{
+    width:100%; height:100%; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-family:'Gaegu', sans-serif; font-weight:700; font-size:19px; border:2.5px solid; opacity:0.92;
+  }
+  .person-A .default-mark{ color:var(--colorA); border-color:var(--colorA); background:rgba(59,125,232,0.08); }
+  .person-B .default-mark{ color:var(--colorB); border-color:var(--colorB); background:rgba(148,87,224,0.08); }
+
+  .todo-dot{
+    position:absolute; bottom:3px; right:3px; font-size:8px; z-index:1;
+    background:rgba(255,255,255,0.75); border-radius:8px; padding:1px 4px; font-weight:700;
+  }
+  .person-A .todo-dot{ color:var(--colorA-deep); }
+  .person-B .todo-dot{ color:var(--colorB-deep); }
+
+  .panel{ padding-top:18px; }
+  .panel-date{ font-family:'Gaegu', sans-serif; font-size:16px; font-weight:700; margin-bottom:12px; }
+  .person-A .panel-date{ color:var(--colorA-deep); }
+  .person-B .panel-date{ color:var(--colorB-deep); }
+
+  .stamp-controls{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .stamp-slot{ flex:1; min-width:120px; border:1.5px dashed var(--line); border-radius:12px; padding:10px; text-align:center; background:var(--card-soft); }
+  .stamp-slot-label{ font-size:11px; font-weight:700; margin-bottom:6px; }
+  .person-A .stamp-slot-label{ color:var(--colorA-deep); }
+  .person-B .stamp-slot-label{ color:var(--colorB-deep); }
+
+  .stamp-preview{ width:48px; height:48px; margin:0 auto 6px; border-radius:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .stamp-preview img{ width:100%; height:100%; object-fit:contain; }
+  .stamp-preview .default-mark{
+    width:100%; height:100%; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-family:'Gaegu', sans-serif; font-weight:700; font-size:19px; border:2.5px solid;
+  }
+
+  .slot-buttons{ display:flex; gap:5px; justify-content:center; flex-wrap:wrap; }
+  .stamp-btn{ font-size:10.5px; font-weight:700; padding:6px 9px; border-radius:8px; cursor:pointer; border:1.5px solid; background:transparent; transition:all .15s; }
+  .person-A .stamp-btn{ color:var(--colorA); border-color:var(--colorA); }
+  .person-A .stamp-btn:hover, .person-A .stamp-btn.active{ background:var(--colorA); color:#fff; }
+  .person-B .stamp-btn{ color:var(--colorB); border-color:var(--colorB); }
+  .person-B .stamp-btn:hover, .person-B .stamp-btn.active{ background:var(--colorB); color:#fff; }
+  .upload-btn{ color:var(--ink-soft) !important; border-color:var(--line) !important; }
+  .upload-btn:hover{ background:var(--ink-soft) !important; color:#fff !important; }
+
+  .clear-row{ text-align:center; margin-bottom:18px; }
+  .clear-btn{ font-size:11px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer; border:1.5px solid #c0577a; color:#c0577a; background:transparent; }
+  .clear-btn:hover{ background:#c0577a; color:#fff; }
+
+  .feeling-input-row{ display:flex; gap:6px; margin-bottom:12px; }
+  .feeling-input-row input{
+    flex:1; padding:9px 12px; border:1.5px solid var(--line); border-radius:11px;
+    font-family:'Pretendard', sans-serif; font-size:13px; background:#fff; color:var(--ink);
+  }
+  .person-A .feeling-input-row input:focus{ outline:none; border-color:var(--colorA); }
+  .person-B .feeling-input-row input:focus{ outline:none; border-color:var(--colorB); }
+  .feeling-input-row button{
+    padding:9px 15px; color:#fff; border:none; border-radius:11px;
+    cursor:pointer; font-weight:700; font-size:13px;
+  }
+  .person-A .feeling-input-row button{ background:var(--colorA-deep); }
+  .person-A .feeling-input-row button:hover{ background:var(--colorA); }
+  .person-B .feeling-input-row button{ background:var(--colorB-deep); }
+  .person-B .feeling-input-row button:hover{ background:var(--colorB); }
+
+  .feeling-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .feeling-item{
+    display:flex; align-items:flex-start; gap:8px; padding:10px 12px;
+    background:#fff; border:1.5px solid var(--line); border-radius:11px;
+  }
+  .feeling-item .mark{ font-size:14px; flex-shrink:0; line-height:1.4; }
+  .feeling-item span.item-text{ flex:1; font-size:13.5px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .feeling-item .del{ cursor:pointer; color:var(--ink-soft); font-size:12px; padding:3px 7px; border-radius:8px; flex-shrink:0; }
+  .feeling-item .del:hover{ background:var(--sky-deep); color:#fff; }
+
+  .stamp-mark.attempt{ transform:translate(-50%,-50%) rotate(2deg); }
+
+  .stats-bar{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .stat-pill{
+    flex:1; min-width:120px; display:flex; align-items:center; gap:6px; padding:8px 12px;
+    border-radius:12px; background:var(--card-soft); border:1.5px solid var(--line); font-size:12px; font-weight:700;
+  }
+  .stat-pill .stat-icon{ font-size:15px; }
+  .stat-pill .stat-val{ font-family:'Gaegu', sans-serif; font-size:15px; }
+  .person-A .stat-val{ color:var(--colorA-deep); }
+  .person-B .stat-val{ color:var(--colorB-deep); }
+
+  .sticker-gallery{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; margin:8px 0 2px; min-height:34px; }
+  .sticker-thumb{
+    position:relative; width:32px; height:32px; border-radius:8px; overflow:hidden; cursor:pointer;
+    border:2px solid var(--line); flex-shrink:0; background:#fff;
+  }
+  .sticker-thumb img{ width:100%; height:100%; object-fit:contain; }
+  .sticker-thumb.is-chosen{ border-color:var(--gold); box-shadow:0 0 0 1.5px var(--gold); }
+  .sticker-thumb .del-x{
+    position:absolute; top:-2px; right:-2px; width:14px; height:14px; border-radius:50%;
+    background:#c0577a; color:#fff; font-size:9px; line-height:14px; text-align:center; display:none;
+  }
+  .sticker-thumb:hover .del-x{ display:block; }
+  .sticker-empty-msg{ font-size:10.5px; color:var(--ink-soft); font-style:italic; padding:4px 0; }
+
+  .snapshot-btn{
+    padding:7px 13px; border-radius:999px; border:1.5px solid rgba(255,255,255,0.75); background:rgba(255,255,255,0.22);
+    color:#fff; font-size:12.5px; font-weight:700; cursor:pointer; font-family:'Gaegu', sans-serif; transition:all .15s;
+    display:flex; align-items:center; gap:5px; margin:14px auto 0;
+  }
+  .snapshot-btn:hover{ background:rgba(255,255,255,0.4); transform:scale(1.03); }
+  .snapshot-btn:disabled{ opacity:0.6; cursor:wait; }
+
+  .grid-wrap{ position:relative; }
+  .month-stamp{
+    position:absolute; inset:-4%; pointer-events:none; z-index:6;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transform:scale(0.72) rotate(-11deg);
+    transition:opacity .45s ease, transform .45s cubic-bezier(.34,1.56,.64,1);
+  }
+  .month-stamp.show{ opacity:1; transform:scale(1) rotate(-8deg); }
+  .month-stamp .stamp-ring{
+    width:82%; aspect-ratio:1; border-radius:50%; border:5px solid;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-family:'Gaegu', sans-serif; font-weight:700; font-size:14px; line-height:1.35;
+    background:rgba(255,255,255,0.82); box-shadow:0 14px 30px -12px rgba(60,30,110,0.5), inset 0 0 0 3px rgba(255,255,255,0.5);
+    position:relative;
+  }
+  .month-stamp .stamp-ring::after{
+    content:''; position:absolute; inset:6px; border-radius:50%; border:1.5px dashed currentColor; opacity:0.55;
+  }
+  .month-stamp .stamp-ring .stamp-big{ font-size:20px; display:block; margin-bottom:2px; }
+  .person-A .stamp-ring{ color:var(--colorA-deep); border-color:var(--colorA); }
+  .person-B .stamp-ring{ color:var(--colorB-deep); border-color:var(--colorB); }
+
+  .legend{ text-align:center; padding:14px 20px 4px; font-size:11px; color:rgba(255,255,255,0.85); }
+
+  @media (max-width:820px){
+    .persons-grid{ grid-template-columns:1fr; }
+    .person-col.person-A{ border-right:none; }
+    .person-tabs{ display:flex; }
+    .person-col{ display:none; }
+    .person-col.is-active{ display:block; }
+  }
+  @media (max-width:520px){
+    h1{ font-size:26px; }
+    .master-section{ padding:18px 16px; }
+    .person-col{ padding:16px 14px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">GALAXY STAMP LEDGER · 은 하 도 장 판</div>
+    <h1>폴라나이트 도장 찍기</h1>
+    <div class="month-nav">
+      <button class="year-btn" id="prevYear" aria-label="작년">«</button>
+      <button id="prevMonth" aria-label="이전 달">‹</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button id="nextMonth" aria-label="다음 달">›</button>
+      <button class="year-btn" id="nextYear" aria-label="내년">»</button>
+    </div>
+    <button class="snapshot-btn" id="snapshotBtn">📸</button>
+  </header>
+
+  <div class="card">
+    <div class="master-section" id="masterSection">
+      <div class="master-header" id="masterHeader">
+        <div class="side-title" style="margin:0;">✧ 메인 미션</div>
+        <span class="master-toggle-icon" id="masterToggleIcon">▾</span>
+      </div>
+      <div class="master-body" id="masterBody">
+        <div class="side-sub">각자의 큰 목표를 적어두는 공용 보드</div>
+        <div class="owner-toggle" id="ownerToggle">
+          <button type="button" data-owner="A" class="is-picked">그됐</button>
+          <button type="button" data-owner="B">솔트</button>
+        </div>
+        <div class="todo-input-row">
+          <input type="text" id="masterInput" placeholder="예: 여칭 뽀뽀하기">
+          <button class="add-btn" id="addMasterBtn">추가</button>
+        </div>
+        <div class="master-list-wrap">
+          <ul class="todo-list" id="masterList"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="person-tabs">
+      <button class="person-tab-btn is-active" id="tabA"></button>
+      <button class="person-tab-btn" id="tabB"></button>
+    </div>
+
+    <div class="persons-grid" id="personsGrid"></div>
+  </div>
+
+  <div class="legend">✦ 이름을 눌러 각자 이름으로 바꿔보세요 · 날짜를 눌러 느낀점과 도장을 관리하세요</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  const MASTER_KEY = 'dojangpan_master_missions_v5';
+  const STAMP_TYPES = ['success','attempt','fail'];
+  const STAMP_SYMBOL = { success:'✷', attempt:'◐', fail:'✧' };
+  let masterTodos = []; // {text, done, owner:'A'|'B'}
+  let currentOwnerPick = 'A';
+  let cur = new Date();
+  cur.setDate(1);
+
+  function fmtKey(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function monthKey(d){
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function loadMaster(){
+    try{ const raw = localStorage.getItem(MASTER_KEY); if(raw) masterTodos = JSON.parse(raw); }catch(e){}
+  }
+  function saveMaster(){ try{ localStorage.setItem(MASTER_KEY, JSON.stringify(masterTodos)); }catch(e){} }
+
+  // 별 반짝임 배경
+  (function makeStars(){
+    const box = document.getElementById('stars');
+    const n = 60;
+    for(let i=0;i<n;i++){
+      const s = document.createElement('span');
+      const size = Math.random()*2.4 + 1;
+      s.style.width = size+'px'; s.style.height = size+'px';
+      s.style.left = (Math.random()*100)+'%'; s.style.top = (Math.random()*100)+'%';
+      s.style.animationDelay = (Math.random()*3)+'s';
+      s.style.animationDuration = (2.4+Math.random()*2.4)+'s';
+      box.appendChild(s);
+    }
+  })();
+
+  function renderMaster(){
+    const masterList = document.getElementById('masterList');
+    masterList.innerHTML = '';
+    if(!masterTodos.length){
+      const p = document.createElement('div'); p.className = 'empty-msg'; p.textContent = '아직 등록된 미션이 없습니다.';
+      masterList.appendChild(p); return;
+    }
+    masterTodos.forEach((item, idx)=>{
+      const li = document.createElement('li');
+      li.className = 'todo-item' + (item.done ? ' done' : '');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = item.done;
+      cb.addEventListener('change', ()=>{ item.done = cb.checked; saveMaster(); renderMaster(); });
+
+      const badge = document.createElement('span');
+      badge.className = 'owner-badge owner-' + item.owner;
+      badge.textContent = '[' + (item.owner === 'A' ? personA.getName() : personB.getName()) + ']';
+
+      const span = document.createElement('span');
+      span.className = 'item-text';
+      span.textContent = item.text;
+
+      const del = document.createElement('span');
+      del.className = 'del'; del.textContent = '삭제';
+      del.addEventListener('click', ()=>{ masterTodos.splice(idx,1); saveMaster(); renderMaster(); });
+
+      li.appendChild(cb); li.appendChild(badge); li.appendChild(span); li.appendChild(del);
+      masterList.appendChild(li);
+    });
+  }
+
+  document.getElementById('ownerToggle').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-owner]');
+    if(!btn) return;
+    currentOwnerPick = btn.dataset.owner;
+    document.querySelectorAll('#ownerToggle button').forEach(b=> b.classList.toggle('is-picked', b === btn));
+  });
+
+  document.getElementById('addMasterBtn').addEventListener('click', ()=>{
+    const input = document.getElementById('masterInput');
+    const text = input.value.trim();
+    if(!text) return;
+    masterTodos.push({ text, done:false, owner: currentOwnerPick });
+    input.value = '';
+    saveMaster(); renderMaster();
+  });
+  document.getElementById('masterInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') document.getElementById('addMasterBtn').click();
+  });
+
+  function updateOwnerToggleLabels(){
+    document.querySelector('#ownerToggle button[data-owner="A"]').textContent = personA.getName();
+    document.querySelector('#ownerToggle button[data-owner="B"]').textContent = personB.getName();
+    document.getElementById('tabA').textContent = 'A' + personA.getName();
+    document.getElementById('tabB').textContent = 'B' + personB.getName();
+  }
+
+  // ---- Person factory ----
+  const TYPE_ID = { success:'Success', attempt:'Attempt', fail:'Fail' };
+  const TYPE_LABEL = { success:'성공', attempt:'완료', fail:'실패' };
+
+  function createPerson(id, defaultName){
+    const STORAGE_KEY = 'dojangpan_person_' + id + '_v5';
+    const state = {
+      name: defaultName, rewardsByMonth:{}, calendarData: {},
+      stickers:{ success:[], attempt:[], fail:[] },
+      selectedKey: fmtKey(new Date())
+    };
+
+    function migrateStickers(raw){
+      const out = { success:[], attempt:[], fail:[] };
+      if(!raw) return out;
+      STAMP_TYPES.forEach(type=>{
+        const v = raw[type];
+        if(Array.isArray(v)) out[type] = v;
+        else if(typeof v === 'string' && v) out[type] = [{ id:'legacy_'+type, data:v }];
+        else out[type] = [];
+      });
+      return out;
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const parsed = JSON.parse(raw);
+          state.name = parsed.name || defaultName;
+          if(parsed.rewardsByMonth && typeof parsed.rewardsByMonth === 'object'){
+            state.rewardsByMonth = parsed.rewardsByMonth;
+          } else if(typeof parsed.reward === 'string' && parsed.reward){
+            // 구버전(달 구분 없는 단일 보상) 마이그레이션: 이번 달 보상으로 옮겨줌
+            state.rewardsByMonth = {}; state.rewardsByMonth[monthKey(new Date())] = parsed.reward;
+          } else {
+            state.rewardsByMonth = {};
+          }
+          state.calendarData = parsed.calendarData || {};
+          state.stickers = migrateStickers(parsed.stickers);
+        }
+      }catch(e){}
+    }
+    function save(){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: state.name, rewardsByMonth: state.rewardsByMonth, calendarData: state.calendarData, stickers: state.stickers })); }catch(e){}
+    }
+    function ensureDay(key){
+      if(!state.calendarData[key]) state.calendarData[key] = { stamp:null, stickerId:null, feelings:[] };
+      const d = state.calendarData[key];
+      if(!d.feelings) d.feelings = d.todos ? d.todos.map(t=>({text:t.text})) : [];
+      if(d.stickerId === undefined) d.stickerId = null;
+      return d;
+    }
+    function stampInnerHTML(type, stickerId){
+      const arr = state.stickers[type] || [];
+      const found = stickerId && arr.find(s=>s.id===stickerId);
+      if(found) return '<img src="'+found.data+'" alt="스티커">';
+      return '<div class="default-mark">'+(STAMP_SYMBOL[type]||'•')+'</div>';
+    }
+    function computeStreak(){
+      let d = new Date(); d.setHours(0,0,0,0);
+      const qualifies = (dt)=>{
+        const e = state.calendarData[fmtKey(dt)];
+        return e && (e.stamp === 'success' || e.stamp === 'attempt');
+      };
+      if(!qualifies(d)) d.setDate(d.getDate()-1); // 오늘 도장이 아직 없으면 어제부터 계산
+      let streak = 0;
+      while(qualifies(d)){ streak++; d.setDate(d.getDate()-1); }
+      return streak;
+    }
+    function computeMonthRate(){
+      const year = cur.getFullYear(), month = cur.getMonth();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      let successCount = 0;
+      for(let dd=1; dd<=daysInMonth; dd++){
+        const key = fmtKey(new Date(year, month, dd));
+        const e = state.calendarData[key];
+        if(e && e.stamp === 'success') successCount++;
+      }
+      return Math.round((successCount/daysInMonth)*100);
+    }
+    function computeMonthCompleteRate(){
+      // 성공 or 완료 도장이 찍힌 날의 비율 (둘 중 하나만 있어도 인정)
+      const year = cur.getFullYear(), month = cur.getMonth();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      let count = 0;
+      for(let dd=1; dd<=daysInMonth; dd++){
+        const key = fmtKey(new Date(year, month, dd));
+        const e = state.calendarData[key];
+        if(e && (e.stamp === 'success' || e.stamp === 'attempt')) count++;
+      }
+      return Math.round((count/daysInMonth)*100);
+    }
+
+    const col = document.createElement('div');
+    col.className = 'person-col person-' + id + (id==='A' ? ' is-active' : '');
+    col.innerHTML = `
+      <div class="name-row">
+        <span class="dot"></span>
+        <input type="text" class="name-input" id="nameInput${id}" maxlength="12">
+      </div>
+      <div class="reward-row">
+        <span class="gift">✤</span>
+        <input type="text" class="reward-input" id="rewardInput${id}" maxlength="40" placeholder="이번 달 다 채우면 받을 보상을 적어보세요">
+      </div>
+      <div class="stats-bar">
+        <div class="stat-pill"><span class="stat-icon">⚝</span>연속 <span class="stat-val" id="streakVal${id}">0</span>일</div>
+        <div class="stat-pill"><span class="stat-icon">☀︎</span>이번달 성공률 <span class="stat-val" id="rateVal${id}">0%</span></div>
+      </div>
+      <div class="weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="grid-wrap">
+        <div class="grid" id="grid${id}"></div>
+        <div class="month-stamp" id="monthStamp${id}">
+          <div class="stamp-ring"><span class="stamp-big">✷</span>이번 달<br>성공 도장 완성!</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-date" id="panelDate${id}"></div>
+        <div class="stamp-controls">
+          <div class="stamp-slot success">
+            <div class="stamp-slot-label">${TYPE_LABEL.success}</div>
+            <div class="sticker-gallery" id="gallerySuccess${id}"></div>
+            <div class="slot-buttons">
+              <button class="stamp-btn" id="btnSuccess${id}">기본 도장</button>
+              <label class="stamp-btn upload-btn" for="successUpload${id}">+ 스티커</label>
+              <input type="file" id="successUpload${id}" accept="image/*" multiple style="display:none">
+            </div>
+          </div>
+          <div class="stamp-slot attempt">
+            <div class="stamp-slot-label">${TYPE_LABEL.attempt}</div>
+            <div class="sticker-gallery" id="galleryAttempt${id}"></div>
+            <div class="slot-buttons">
+              <button class="stamp-btn" id="btnAttempt${id}">기본 도장</button>
+              <label class="stamp-btn upload-btn" for="attemptUpload${id}">+ 스티커</label>
+              <input type="file" id="attemptUpload${id}" accept="image/*" multiple style="display:none">
+            </div>
+          </div>
+          <div class="stamp-slot fail">
+            <div class="stamp-slot-label">${TYPE_LABEL.fail}</div>
+            <div class="sticker-gallery" id="galleryFail${id}"></div>
+            <div class="slot-buttons">
+              <button class="stamp-btn" id="btnFail${id}">기본 도장</button>
+              <label class="stamp-btn upload-btn" for="failUpload${id}">+ 스티커</label>
+              <input type="file" id="failUpload${id}" accept="image/*" multiple style="display:none">
+            </div>
+          </div>
+        </div>
+        <div class="clear-row"><button class="clear-btn" id="btnClear${id}">이 날 도장 지우기</button></div>
+        <div class="feeling-input-row">
+          <input type="text" id="feelingInput${id}" placeholder="이 날의 느낀점을 적어보세요...">
+          <button id="addFeelingBtn${id}">추가</button>
+        </div>
+        <ul class="feeling-list" id="feelingList${id}"></ul>
+      </div>
+    `;
+    document.getElementById('personsGrid').appendChild(col);
+
+    const nameInput = col.querySelector('#nameInput'+id);
+    const rewardInput = col.querySelector('#rewardInput'+id);
+    const grid = col.querySelector('#grid'+id);
+    const panelDate = col.querySelector('#panelDate'+id);
+    const feelingList = col.querySelector('#feelingList'+id);
+    const feelingInput = col.querySelector('#feelingInput'+id);
+    const streakVal = col.querySelector('#streakVal'+id);
+    const rateVal = col.querySelector('#rateVal'+id);
+
+    function setStamp(type, stickerId){
+      const entry = ensureDay(state.selectedKey);
+      if(entry.stamp === type && (entry.stickerId||null) === (stickerId||null)){
+        entry.stamp = null; entry.stickerId = null;
+      } else {
+        entry.stamp = type; entry.stickerId = stickerId || null;
+      }
+      save(); renderPanel(); renderCalendar();
+    }
+
+    function renderGallery(type){
+      const galleryEl = col.querySelector('#gallery'+TYPE_ID[type]+id);
+      galleryEl.innerHTML = '';
+      const arr = state.stickers[type] || [];
+      const entry = ensureDay(state.selectedKey);
+      if(!arr.length){
+        const p = document.createElement('div'); p.className = 'sticker-empty-msg'; p.textContent = '아직 등록된 스티커가 없어요';
+        galleryEl.appendChild(p);
+        return;
+      }
+      arr.forEach(s=>{
+        const thumb = document.createElement('div');
+        thumb.className = 'sticker-thumb' + ((entry.stamp===type && entry.stickerId===s.id) ? ' is-chosen' : '');
+        thumb.innerHTML = '<img src="'+s.data+'" alt="스티커">';
+        thumb.title = '눌러서 이 날에 찍기';
+        thumb.addEventListener('click', ()=> setStamp(type, s.id));
+        const delX = document.createElement('span'); delX.className = 'del-x'; delX.textContent = '×';
+        delX.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          if(!confirm('이 스티커를 삭제할까요? (이미 찍힌 날짜는 기본 도장으로 남아요)')) return;
+          state.stickers[type] = state.stickers[type].filter(x=>x.id!==s.id);
+          Object.values(state.calendarData).forEach(day=>{
+            if(day.stamp===type && day.stickerId===s.id) day.stickerId = null;
+          });
+          save(); renderPanel(); renderCalendar();
+        });
+        thumb.appendChild(delX);
+        galleryEl.appendChild(thumb);
+      });
+    }
+
+    function renderStats(){
+      streakVal.textContent = computeStreak();
+      rateVal.textContent = computeMonthRate() + '%';
+      const monthStampEl = col.querySelector('#monthStamp'+id);
+      if(monthStampEl){
+        monthStampEl.classList.toggle('show', computeMonthCompleteRate() === 100);
+      }
+    }
+
+    function renderCalendar(){
+      grid.innerHTML = '';
+      const year = cur.getFullYear();
+      const month = cur.getMonth();
+      const firstDow = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month+1, 0).getDate();
+      const todayKey = fmtKey(new Date());
+
+      for(let i=0;i<firstDow;i++){
+        const filler = document.createElement('div'); filler.className = 'day empty'; grid.appendChild(filler);
+      }
+      for(let d=1; d<=daysInMonth; d++){
+        const dateObj = new Date(year, month, d);
+        const key = fmtKey(dateObj);
+        const cell = document.createElement('div');
+        cell.className = 'day';
+        if(key === todayKey) cell.classList.add('today');
+        if(key === state.selectedKey) cell.classList.add('selected');
+
+        const num = document.createElement('div'); num.className = 'num'; num.textContent = d;
+        cell.appendChild(num);
+
+        const entry = state.calendarData[key];
+        if(entry && entry.stamp){
+          const mark = document.createElement('div');
+          mark.className = 'stamp-mark ' + entry.stamp;
+          mark.innerHTML = stampInnerHTML(entry.stamp, entry.stickerId);
+          cell.appendChild(mark);
+        }
+        const feelingsArr = entry && (entry.feelings || entry.todos);
+        if(feelingsArr && feelingsArr.length){
+          const dot = document.createElement('div'); dot.className = 'todo-dot';
+          dot.textContent = '📝' + feelingsArr.length;
+          cell.appendChild(dot);
+        }
+        cell.addEventListener('click', ()=>{ state.selectedKey = key; renderCalendar(); renderPanel(); });
+        grid.appendChild(cell);
+      }
+      renderStats();
+    }
+
+    function renderPanel(){
+      const [y,m,d] = state.selectedKey.split('-').map(Number);
+      const dateObj = new Date(y, m-1, d);
+      const weekdays = ['일','월','화','수','목','금','토'];
+      panelDate.textContent = y + '년 ' + m + '월 ' + d + '일 (' + weekdays[dateObj.getDay()] + ')';
+
+      const entry = ensureDay(state.selectedKey);
+      STAMP_TYPES.forEach(type=>{
+        col.querySelector('#btn'+TYPE_ID[type]+id).classList.toggle('active', entry.stamp === type && !entry.stickerId);
+        renderGallery(type);
+      });
+
+      feelingList.innerHTML = '';
+      if(!entry.feelings.length){
+        const p = document.createElement('div'); p.className = 'empty-msg'; p.textContent = '아직 남긴 느낀점이 없습니다.';
+        feelingList.appendChild(p); return;
+      }
+      entry.feelings.forEach((f, idx)=>{
+        const li = document.createElement('li');
+        li.className = 'feeling-item';
+        const mark = document.createElement('span'); mark.className = 'mark'; mark.textContent = '💭';
+        const span = document.createElement('span'); span.className = 'item-text'; span.textContent = f.text;
+        const del = document.createElement('span'); del.className = 'del'; del.textContent = '삭제';
+        del.addEventListener('click', ()=>{ entry.feelings.splice(idx,1); save(); renderPanel(); renderCalendar(); });
+        li.appendChild(mark); li.appendChild(span); li.appendChild(del);
+        feelingList.appendChild(li);
+      });
+    }
+
+    function addFeeling(){
+      const text = feelingInput.value.trim();
+      if(!text) return;
+      const entry = ensureDay(state.selectedKey);
+      entry.feelings.push({ text });
+      feelingInput.value = '';
+      save(); renderPanel(); renderCalendar();
+    }
+
+    col.querySelector('#addFeelingBtn'+id).addEventListener('click', addFeeling);
+    feelingInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') addFeeling(); });
+
+    STAMP_TYPES.forEach(type=>{
+      col.querySelector('#btn'+TYPE_ID[type]+id).addEventListener('click', ()=> setStamp(type, null));
+    });
+    col.querySelector('#btnClear'+id).addEventListener('click', ()=>{
+      const entry = ensureDay(state.selectedKey);
+      entry.stamp = null; entry.stickerId = null;
+      save(); renderPanel(); renderCalendar();
+    });
+
+    function handleUpload(type, fileInput){
+      fileInput.addEventListener('change', (e)=>{
+        const files = Array.from(e.target.files || []);
+        if(!files.length) return;
+        files.forEach(file=>{
+          if(file.size > 1.5*1024*1024){ alert('스티커 이미지는 1.5MB 이하로 올려주세요. ('+file.name+')'); return; }
+          const reader = new FileReader();
+          reader.onload = (ev)=>{
+            state.stickers[type].push({ id:'stk_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), data: ev.target.result });
+            save(); renderPanel(); renderCalendar();
+          };
+          reader.readAsDataURL(file);
+        });
+        fileInput.value = '';
+      });
+    }
+    STAMP_TYPES.forEach(type=> handleUpload(type, col.querySelector('#'+type+'Upload'+id)));
+
+    nameInput.addEventListener('input', ()=>{
+      state.name = nameInput.value || defaultName;
+      save();
+      renderMaster();
+      updateOwnerToggleLabels();
+    });
+    nameInput.addEventListener('blur', ()=>{
+      if(!nameInput.value.trim()){ nameInput.value = defaultName; state.name = defaultName; save(); renderMaster(); updateOwnerToggleLabels(); }
+    });
+
+    function updateRewardInput(){
+      rewardInput.value = state.rewardsByMonth[monthKey(cur)] || '';
+    }
+
+    rewardInput.addEventListener('input', ()=>{
+      state.rewardsByMonth[monthKey(cur)] = rewardInput.value;
+      save();
+    });
+
+    return {
+      init(){
+        load();
+        nameInput.value = state.name;
+        updateRewardInput();
+        renderCalendar(); renderPanel();
+      },
+      rerenderMonth(){ updateRewardInput(); renderCalendar(); renderPanel(); },
+      getName(){ return state.name; }
+    };
+  }
+
+  const personA = createPerson('A', '그됐');
+  const personB = createPerson('B', '솔트');
+
+  function renderMonthLabel(){
+    document.getElementById('monthLabel').textContent = cur.getFullYear() + '년 ' + (cur.getMonth()+1) + '월';
+  }
+  document.getElementById('prevMonth').addEventListener('click', ()=>{
+    cur.setMonth(cur.getMonth()-1); renderMonthLabel(); personA.rerenderMonth(); personB.rerenderMonth();
+  });
+  document.getElementById('nextMonth').addEventListener('click', ()=>{
+    cur.setMonth(cur.getMonth()+1); renderMonthLabel(); personA.rerenderMonth(); personB.rerenderMonth();
+  });
+  document.getElementById('prevYear').addEventListener('click', ()=>{
+    cur.setFullYear(cur.getFullYear()-1); renderMonthLabel(); personA.rerenderMonth(); personB.rerenderMonth();
+  });
+  document.getElementById('nextYear').addEventListener('click', ()=>{
+    cur.setFullYear(cur.getFullYear()+1); renderMonthLabel(); personA.rerenderMonth(); personB.rerenderMonth();
+  });
+
+  const tabA = document.getElementById('tabA');
+  const tabB = document.getElementById('tabB');
+  const grid = document.getElementById('personsGrid');
+  tabA.addEventListener('click', ()=>{
+    tabA.classList.add('is-active'); tabB.classList.remove('is-active');
+    grid.querySelector('.person-A').classList.add('is-active');
+    grid.querySelector('.person-B').classList.remove('is-active');
+  });
+  tabB.addEventListener('click', ()=>{
+    tabB.classList.add('is-active'); tabA.classList.remove('is-active');
+    grid.querySelector('.person-B').classList.add('is-active');
+    grid.querySelector('.person-A').classList.remove('is-active');
+  });
+
+  const snapshotBtn = document.getElementById('snapshotBtn');
+  snapshotBtn.addEventListener('click', async ()=>{
+    if(typeof html2canvas === 'undefined'){
+      alert('스냅샷 기능을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도해주세요.');
+      return;
+    }
+    const target = document.querySelector('.card');
+    const originalText = snapshotBtn.textContent;
+    snapshotBtn.disabled = true;
+    snapshotBtn.textContent = '📸 저장 중...';
+    try{
+      const canvas = await html2canvas(target, { backgroundColor:'#ffffff', scale:2, useCORS:true });
+      const link = document.createElement('a');
+      link.download = '도장판_' + cur.getFullYear() + '년' + (cur.getMonth()+1) + '월.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }catch(err){
+      alert('스냅샷 저장에 실패했어요: ' + err.message);
+    }finally{
+      snapshotBtn.disabled = false;
+      snapshotBtn.textContent = originalText;
+    }
+  });
+
+  const MASTER_COLLAPSE_KEY = 'dojangpan_master_collapsed_v1';
+  const masterSection = document.getElementById('masterSection');
+  const masterHeader = document.getElementById('masterHeader');
+  function setMasterCollapsed(collapsed){
+    masterSection.classList.toggle('collapsed', collapsed);
+    try{ localStorage.setItem(MASTER_COLLAPSE_KEY, collapsed ? '1' : '0'); }catch(e){}
+  }
+  masterHeader.addEventListener('click', ()=>{
+    setMasterCollapsed(!masterSection.classList.contains('collapsed'));
+  });
+  try{ setMasterCollapsed(localStorage.getItem(MASTER_COLLAPSE_KEY) === '1'); }catch(e){}
+
+  loadMaster();
+  renderMonthLabel();
+  personA.init();
+  personB.init();
+  updateOwnerToggleLabels();
+  renderMaster();
+})();
+</script>
+
+</body>
+</html>
