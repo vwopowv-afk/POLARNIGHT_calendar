@@ -61,6 +61,11 @@
   .month-nav button:hover{ background:rgba(255,255,255,0.4); transform:scale(1.06); }
   .month-label{ font-family:'Gaegu', sans-serif; font-size:20px; font-weight:700; min-width:120px; }
 
+  .sync-status{ text-align:center; font-size:11.5px; color:rgba(255,255,255,0.9); margin-top:10px; font-family:'Gaegu', sans-serif; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .sync-status .dot{ width:7px; height:7px; border-radius:50%; background:#7CE88A; box-shadow:0 0 6px #7CE88A; }
+  .sync-status.offline .dot{ background:#FFD37A; box-shadow:0 0 6px #FFD37A; animation:none; }
+  .sync-status.local .dot{ background:#FF9E9E; box-shadow:0 0 6px #FF9E9E; }
+
   .card{ background:var(--card); border-radius:26px; box-shadow: 0 24px 50px -20px var(--shadow); overflow:hidden; }
 
   .master-section{ padding:24px 28px 22px; border-bottom:1px dashed var(--line); background:var(--card-soft); }
@@ -327,6 +332,7 @@
       <button id="nextMonth" aria-label="다음 달">›</button>
       <button class="year-btn" id="nextYear" aria-label="내년">»</button>
     </div>
+    <div class="sync-status" id="syncStatus"><span class="dot"></span><span id="syncStatusText">연결 확인 중...</span></div>
     <button class="snapshot-btn" id="snapshotBtn">📸</button>
   </header>
 
@@ -364,6 +370,40 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- ▼▼▼ Firebase 연동 ▼▼▼ -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script>
+  // 아래 firebaseConfig 값을, Firebase 콘솔 > 프로젝트 설정 > 내 앱(웹 앱)에서 복사한
+  // 본인의 값으로 반드시 교체해주세요. (Realtime Database를 만들면 databaseURL이 생겨요)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCB4xoS_vrplxc4x7hyVq-JkgRlEgcvnGw",
+    authDomain: "todolist-b49a2.firebaseapp.com",
+    databaseURL: "https://todolist-b49a2-default-rtdb.firebaseio.com",
+    projectId: "todolist-b49a2",
+    storageBucket: "todolist-b49a2.firebasestorage.app",
+    messagingSenderId: "1081441020474",
+    appId: "1:1081441020474:web:5776182649537538ca6303"
+  };
+
+  // "여기에_"가 그대로 남아있으면(= 아직 설정 안 함) 자동으로 로컬 저장 모드로만 동작해요.
+  const FIREBASE_CONFIGURED = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('여기에_') === -1;
+  let firebaseEnabled = false;
+  let fbDb = null;
+  if(FIREBASE_CONFIGURED){
+    try{
+      firebase.initializeApp(firebaseConfig);
+      fbDb = firebase.database();
+      firebaseEnabled = true;
+    }catch(err){
+      console.error('Firebase 초기화 실패:', err);
+      firebaseEnabled = false;
+    }
+  }
+</script>
+<!-- ▲▲▲ Firebase 연동 끝 ▲▲▲ -->
+
 <script>
 (function(){
   const MASTER_KEY = 'dojangpan_master_missions_v5';
@@ -373,6 +413,23 @@
   let currentOwnerPick = 'A';
   let cur = new Date();
   cur.setDate(1);
+
+  const syncStatusEl = document.getElementById('syncStatus');
+  const syncStatusTextEl = document.getElementById('syncStatusText');
+  function setSyncStatus(mode){
+    // mode: 'online' | 'offline' | 'local'
+    syncStatusEl.classList.remove('offline','local');
+    if(mode === 'online'){ syncStatusTextEl.textContent = '✿'; }
+    else if(mode === 'offline'){ syncStatusEl.classList.add('offline'); syncStatusTextEl.textContent = '연결 끊김 · 재접속 중...'; }
+    else { syncStatusEl.classList.add('local'); syncStatusTextEl.textContent = '☘︎ (Firebase 미설정)'; }
+  }
+  if(firebaseEnabled){
+    fbDb.ref('.info/connected').on('value', (snap)=>{
+      setSyncStatus(snap.val() === true ? 'online' : 'offline');
+    });
+  } else {
+    setSyncStatus('local');
+  }
 
   function fmtKey(d){
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -384,7 +441,25 @@
   function loadMaster(){
     try{ const raw = localStorage.getItem(MASTER_KEY); if(raw) masterTodos = JSON.parse(raw); }catch(e){}
   }
-  function saveMaster(){ try{ localStorage.setItem(MASTER_KEY, JSON.stringify(masterTodos)); }catch(e){} }
+  function saveMaster(){
+    try{ localStorage.setItem(MASTER_KEY, JSON.stringify(masterTodos)); }catch(e){}
+    if(firebaseEnabled){
+      fbDb.ref('dojangpan/master').set(masterTodos).catch(err=> console.error('마스터 미션 동기화 실패', err));
+    }
+  }
+  if(firebaseEnabled){
+    fbDb.ref('dojangpan/master').on('value', (snap)=>{
+      const remote = snap.val();
+      if(remote){
+        masterTodos = remote;
+        try{ localStorage.setItem(MASTER_KEY, JSON.stringify(masterTodos)); }catch(e){}
+        renderMaster();
+      } else {
+        // 서버에 아직 아무것도 없으면 지금 갖고 있는 로컬 데이터를 최초 씨앗으로 올려줌
+        fbDb.ref('dojangpan/master').set(masterTodos).catch(()=>{});
+      }
+    });
+  }
 
   // 별 반짝임 배경
   (function makeStars(){
@@ -502,8 +577,26 @@
         }
       }catch(e){}
     }
+    function buildPayload(){
+      return { name: state.name, rewardsByMonth: state.rewardsByMonth, calendarData: state.calendarData, stickers: state.stickers };
+    }
     function save(){
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: state.name, rewardsByMonth: state.rewardsByMonth, calendarData: state.calendarData, stickers: state.stickers })); }catch(e){}
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(buildPayload())); }catch(e){}
+      if(firebaseEnabled){
+        fbDb.ref('dojangpan/person'+id).set(buildPayload()).catch(err=> console.error('동기화 실패('+id+')', err));
+      }
+    }
+    function applyRemoteState(remote){
+      state.name = remote.name || defaultName;
+      state.rewardsByMonth = remote.rewardsByMonth || {};
+      state.calendarData = remote.calendarData || {};
+      state.stickers = migrateStickers(remote.stickers);
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(buildPayload())); }catch(e){}
+      nameInput.value = state.name;
+      updateRewardInput();
+      renderCalendar(); renderPanel();
+      updateOwnerToggleLabels();
+      renderMaster();
     }
     function ensureDay(key){
       if(!state.calendarData[key]) state.calendarData[key] = { stamp:null, stickerId:null, feelings:[] };
@@ -802,6 +895,18 @@
       state.rewardsByMonth[monthKey(cur)] = rewardInput.value;
       save();
     });
+
+    if(firebaseEnabled){
+      fbDb.ref('dojangpan/person'+id).on('value', (snap)=>{
+        const remote = snap.val();
+        if(remote){
+          applyRemoteState(remote);
+        } else {
+          // 서버에 아직 데이터가 없으면 지금 갖고 있는 로컬 데이터를 최초 씨앗으로 올려줌
+          fbDb.ref('dojangpan/person'+id).set(buildPayload()).catch(()=>{});
+        }
+      });
+    }
 
     return {
       init(){
