@@ -170,10 +170,13 @@
 
   .stamp-mark{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-8deg);
-    width:84%; height:84%; display:flex; align-items:center; justify-content:center; pointer-events:none;
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center; pointer-events:none;
   }
   .stamp-mark.fail{ transform:translate(-50%,-50%) rotate(7deg); }
-  .stamp-mark img{ width:100%; height:100%; object-fit:contain; filter: drop-shadow(0 3px 5px rgba(60,30,110,0.35)); }
+  .stamp-mark img{
+    width:112%; height:112%; max-width:none; flex-shrink:0; object-fit:contain;
+    filter:drop-shadow(0 3px 5px rgba(60,30,110,0.35));
+  }
   .stamp-mark .default-mark{
     width:100%; height:100%; border-radius:8px; display:flex; align-items:center; justify-content:center;
     font-family:'Gaegu', sans-serif; font-weight:700; font-size:19px; border:2.5px solid; opacity:0.92;
@@ -246,6 +249,61 @@
   .feeling-item .del:hover{ background:var(--sky-deep); color:#fff; }
 
   .stamp-mark.attempt{ transform:translate(-50%,-50%) rotate(2deg); }
+
+  /* 도장을 새로 찍을 때만 재생되는 작은 성취 애니메이션 */
+  .day.celebrate-success .stamp-mark{ animation:stampThump .52s cubic-bezier(.2,.9,.25,1.25) both; }
+  .day.celebrate-attempt .stamp-mark{ animation:stampComplete .68s cubic-bezier(.16,.95,.28,1.18) both; }
+  .day.celebrate-fail .stamp-mark{ animation:stampFail .62s ease-out both; }
+  @keyframes stampThump{
+    0%{ opacity:0; transform:translate(-50%,-72%) rotate(-8deg) scale(1.38); }
+    48%{ opacity:1; transform:translate(-50%,-50%) rotate(-8deg) scale(.88); }
+    72%{ transform:translate(-50%,-50%) rotate(-8deg) scale(1.07); }
+    100%{ transform:translate(-50%,-50%) rotate(-8deg) scale(1); }
+  }
+  @keyframes stampComplete{
+    0%{ opacity:0; transform:translate(-50%,-66%) rotate(2deg) scale(1.55); }
+    42%{ opacity:1; transform:translate(-50%,-50%) rotate(2deg) scale(.82); }
+    68%{ transform:translate(-50%,-50%) rotate(2deg) scale(1.12); }
+    100%{ transform:translate(-50%,-50%) rotate(2deg) scale(1); }
+  }
+  @keyframes stampFail{
+    0%{ opacity:0; transform:translate(-50%,-66%) rotate(7deg) scale(1.28); }
+    42%{ opacity:1; transform:translate(-50%,-50%) rotate(7deg) scale(.9); }
+    58%{ transform:translate(-54%,-50%) rotate(2deg) scale(1.02); }
+    72%{ transform:translate(-47%,-50%) rotate(11deg) scale(1); }
+    86%{ transform:translate(-52%,-50%) rotate(5deg) scale(1); }
+    100%{ transform:translate(-50%,-50%) rotate(7deg) scale(1); }
+  }
+  .stamp-impact{
+    position:absolute; left:50%; top:50%; width:58%; aspect-ratio:1; border-radius:50%;
+    border:3px solid var(--gold); pointer-events:none; z-index:3;
+    animation:impactRing .62s ease-out both;
+  }
+  @keyframes impactRing{
+    0%{ opacity:.95; transform:translate(-50%,-50%) scale(.18); }
+    100%{ opacity:0; transform:translate(-50%,-50%) scale(1.65); }
+  }
+  .stamp-impact.fail-impact{
+    border-color:#9C96AE; border-style:dashed; opacity:.72;
+    animation-duration:.52s;
+  }
+  .confetti-piece{
+    position:absolute; left:50%; top:50%; width:5px; height:9px; border-radius:2px;
+    background:var(--confetti-color); pointer-events:none; z-index:4;
+    transform:translate(-50%,-50%);
+    animation:confettiPop .9s cubic-bezier(.12,.72,.25,1) var(--delay) both;
+  }
+  @keyframes confettiPop{
+    0%{ opacity:1; transform:translate(-50%,-50%) rotate(0deg) scale(.45); }
+    72%{ opacity:1; transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r)) scale(1); }
+    100%{ opacity:0; transform:translate(calc(-50% + var(--x)),calc(-50% + var(--drop))) rotate(var(--r)) scale(.8); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .day.celebrate-success .stamp-mark, .day.celebrate-attempt .stamp-mark,
+    .day.celebrate-fail .stamp-mark,
+    .stamp-impact, .confetti-piece{ animation:none; }
+    .stamp-impact, .confetti-piece{ display:none; }
+  }
 
   .stats-bar{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
   .stat-pill{
@@ -718,14 +776,53 @@
     const streakVal = col.querySelector('#streakVal'+id);
     const rateVal = col.querySelector('#rateVal'+id);
 
+    function playStampCelebration(type, key){
+      if(type !== 'success' && type !== 'attempt' && type !== 'fail') return;
+      const cell = Array.from(grid.querySelectorAll('.day')).find(el=>el.dataset.key === key);
+      if(!cell) return;
+
+      const celebrationClass = type === 'success'
+        ? 'celebrate-success'
+        : type === 'attempt' ? 'celebrate-attempt' : 'celebrate-fail';
+      cell.classList.add(celebrationClass);
+      const ring = document.createElement('span');
+      ring.className = 'stamp-impact' + (type === 'fail' ? ' fail-impact' : '');
+      cell.appendChild(ring);
+
+      // '완료'는 목표치를 채운 상태이므로 더 강한 컨페티로 구분한다.
+      if(type === 'attempt'){
+        const colors = ['#FFC94D','#FF6FAE','#7C5CE8','#43C6E8','#62D989','#FF8A5C'];
+        const pieces = 14;
+        for(let i=0; i<pieces; i++){
+          const angle = (Math.PI * 2 * i / pieces) - Math.PI / 2;
+          const distance = 32 + (i % 3) * 6;
+          const piece = document.createElement('span');
+          piece.className = 'confetti-piece';
+          piece.style.setProperty('--confetti-color', colors[i % colors.length]);
+          piece.style.setProperty('--x', Math.cos(angle) * distance + 'px');
+          piece.style.setProperty('--y', Math.sin(angle) * distance + 'px');
+          piece.style.setProperty('--drop', (Math.sin(angle) * distance + 18) + 'px');
+          piece.style.setProperty('--r', (150 + i * 47) + 'deg');
+          piece.style.setProperty('--delay', (i % 4) * 0.025 + 's');
+          cell.appendChild(piece);
+        }
+      }
+      setTimeout(()=>{
+        cell.classList.remove('celebrate-success','celebrate-attempt','celebrate-fail');
+        cell.querySelectorAll('.stamp-impact,.confetti-piece').forEach(el=>el.remove());
+      }, 1100);
+    }
+
     function setStamp(type, stickerId){
       const entry = ensureDay(state.selectedKey);
+      const isNewStamp = !(entry.stamp === type && (entry.stickerId||null) === (stickerId||null));
       if(entry.stamp === type && (entry.stickerId||null) === (stickerId||null)){
         entry.stamp = null; entry.stickerId = null;
       } else {
         entry.stamp = type; entry.stickerId = stickerId || null;
       }
       save(); renderPanel(); renderCalendar();
+      if(isNewStamp) requestAnimationFrame(()=> playStampCelebration(type, state.selectedKey));
     }
 
     function renderGallery(type){
@@ -784,6 +881,7 @@
         const key = fmtKey(dateObj);
         const cell = document.createElement('div');
         cell.className = 'day';
+        cell.dataset.key = key;
         if(key === todayKey) cell.classList.add('today');
         if(key === state.selectedKey) cell.classList.add('selected');
 
