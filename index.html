@@ -197,6 +197,14 @@
   .person-B .panel-date{ color:var(--colorB-deep); }
 
   .stamp-controls{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .stamp-manage-row{ display:flex; justify-content:flex-end; margin:-3px 0 6px; }
+  .sticker-manage-btn{
+    border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink-soft);
+    padding:4px 9px; font-family:'Gaegu', sans-serif; font-size:10.5px; font-weight:700;
+    line-height:1.2; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+  }
+  .sticker-manage-btn:hover{ background:var(--card-soft); color:var(--violet-deep); border-color:var(--violet); }
+  .sticker-manage-btn.is-active{ background:var(--violet); color:#fff; border-color:var(--violet); }
   .stamp-slot{ flex:1; min-width:120px; border:1.5px dashed var(--line); border-radius:12px; padding:10px; text-align:center; background:var(--card-soft); }
   .stamp-slot-label{ font-size:11px; font-weight:700; margin-bottom:6px; }
   .person-A .stamp-slot-label{ color:var(--colorA-deep); }
@@ -310,10 +318,27 @@
     flex:1; min-width:120px; display:flex; align-items:center; gap:6px; padding:8px 12px;
     border-radius:12px; background:var(--card-soft); border:1.5px solid var(--line); font-size:12px; font-weight:700;
   }
+  button.stat-pill{ color:var(--ink); font-family:inherit; cursor:pointer; text-align:left; }
+  button.stat-pill::after{ content:'⌄'; margin-left:auto; color:var(--ink-soft); transition:transform .18s ease; }
+  button.stat-pill[aria-expanded="true"]::after{ transform:rotate(180deg); }
   .stat-pill .stat-icon{ font-size:15px; }
   .stat-pill .stat-val{ font-family:'Gaegu', sans-serif; font-size:15px; }
   .person-A .stat-val{ color:var(--colorA-deep); }
   .person-B .stat-val{ color:var(--colorB-deep); }
+
+  .month-summary{
+    margin:-4px 0 12px; border:1.5px solid var(--line); border-radius:11px;
+    background:#fff; overflow:hidden;
+  }
+  .month-summary[hidden]{ display:none; }
+  .month-summary-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    border-top:1px solid var(--line); background:var(--line);
+  }
+  .summary-item{ background:var(--card-soft); padding:8px 4px; text-align:center; }
+  .summary-label{ display:block; font-size:10px; color:var(--ink-soft); margin-bottom:2px; }
+  .summary-value{ font-family:'Gaegu', sans-serif; font-size:15px; font-weight:700; color:var(--ink); }
+  .summary-note{ padding:6px 10px; border-top:1px solid var(--line); color:var(--ink-soft); font-size:10px; text-align:center; }
 
   .sticker-gallery{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; margin:8px 0 2px; min-height:34px; }
   .sticker-thumb{
@@ -326,7 +351,8 @@
     position:absolute; top:-2px; right:-2px; width:14px; height:14px; border-radius:50%;
     background:#c0577a; color:#fff; font-size:9px; line-height:14px; text-align:center; display:none;
   }
-  .sticker-thumb:hover .del-x{ display:block; }
+  .person-col.sticker-managing .sticker-thumb{ cursor:default; }
+  .person-col.sticker-managing .sticker-thumb .del-x{ display:block; cursor:pointer; }
   .sticker-empty-msg{ font-size:10.5px; color:var(--ink-soft); font-style:italic; padding:4px 0; }
 
   .snapshot-btn{
@@ -345,19 +371,29 @@
     transition:opacity .45s ease, transform .45s cubic-bezier(.34,1.56,.64,1);
   }
   .month-stamp.show{ opacity:1; transform:scale(1) rotate(-8deg); }
+  .month-stamp.show .stamp-ring{ animation:monthFinalThump .72s cubic-bezier(.18,.9,.25,1.24) both; }
+  @keyframes monthFinalThump{
+    0%{ transform:scale(1.42); filter:blur(1px); }
+    46%{ transform:scale(.9); filter:blur(0); }
+    70%{ transform:scale(1.07); }
+    100%{ transform:scale(1); }
+  }
   .month-stamp .stamp-ring{
     width:82%; aspect-ratio:1; border-radius:50%; border:5px solid;
     display:flex; align-items:center; justify-content:center; text-align:center;
-    font-family:'Gaegu', sans-serif; font-weight:700; font-size:14px; line-height:1.35;
+    flex-direction:column; font-family:'Gaegu', sans-serif; font-weight:700; font-size:18px; line-height:1.2;
     background:rgba(255,255,255,0.82); box-shadow:0 14px 30px -12px rgba(60,30,110,0.5), inset 0 0 0 3px rgba(255,255,255,0.5);
     position:relative;
   }
   .month-stamp .stamp-ring::after{
     content:''; position:absolute; inset:6px; border-radius:50%; border:1.5px dashed currentColor; opacity:0.55;
   }
-  .month-stamp .stamp-ring .stamp-big{ font-size:20px; display:block; margin-bottom:2px; }
+  .month-stamp .stamp-ring .stamp-big{ font-size:32px; display:block; margin-bottom:3px; }
+  .month-stamp .stamp-ring .stamp-wow{ font-size:27px; display:block; letter-spacing:-0.03em; }
+  .month-stamp .stamp-ring .stamp-sub{ font-size:15px; display:block; margin-top:4px; opacity:.88; }
   .person-A .stamp-ring{ color:var(--colorA-deep); border-color:var(--colorA); }
   .person-B .stamp-ring{ color:var(--colorB-deep); border-color:var(--colorB); }
+  @media (prefers-reduced-motion: reduce){ .month-stamp.show .stamp-ring{ animation:none; } }
 
   .legend{ text-align:center; padding:14px 20px 4px; font-size:11px; color:rgba(255,255,255,0.85); }
 
@@ -671,25 +707,61 @@
     }
     function computeStreak(){
       let d = new Date(); d.setHours(0,0,0,0);
+      const isWeeklyRest = (dt)=>{
+        const entry = state.calendarData[fmtKey(dt)];
+        if(!entry || entry.stamp !== 'fail') return false;
+        const monday = new Date(dt);
+        const day = monday.getDay();
+        monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
+        let failOrder = 0;
+        for(let cursor=new Date(monday); cursor<=dt; cursor.setDate(cursor.getDate()+1)){
+          const item = state.calendarData[fmtKey(cursor)];
+          if(item && item.stamp === 'fail') failOrder++;
+        }
+        return failOrder <= 2;
+      };
       const qualifies = (dt)=>{
         const e = state.calendarData[fmtKey(dt)];
-        return e && (e.stamp === 'success' || e.stamp === 'attempt');
+        return e && (e.stamp === 'success' || e.stamp === 'attempt' || isWeeklyRest(dt));
       };
       if(!qualifies(d)) d.setDate(d.getDate()-1); // 오늘 도장이 아직 없으면 어제부터 계산
       let streak = 0;
       while(qualifies(d)){ streak++; d.setDate(d.getDate()-1); }
       return streak;
     }
-    function computeMonthRate(){
+    function computeMonthStats(){
       const year = cur.getFullYear(), month = cur.getMonth();
       const daysInMonth = new Date(year, month+1, 0).getDate();
-      let successCount = 0;
-      for(let dd=1; dd<=daysInMonth; dd++){
-        const key = fmtKey(new Date(year, month, dd));
+      const now = new Date();
+      const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+      const isFutureMonth = new Date(year, month, 1) > new Date(now.getFullYear(), now.getMonth(), 1);
+      const targetDays = isFutureMonth ? 0 : (isCurrentMonth ? now.getDate() : daysInMonth);
+      const monthlyGoal = Math.round(daysInMonth * 5 / 7);
+      const counts = { success:0, attempt:0, fail:0, empty:0, rest:0, targetDays, monthlyGoal };
+      const failsByWeek = {};
+      for(let dd=1; dd<=targetDays; dd++){
+        const date = new Date(year, month, dd);
+        const key = fmtKey(date);
         const e = state.calendarData[key];
-        if(e && e.stamp === 'success') successCount++;
+        if(e && (e.stamp === 'success' || e.stamp === 'attempt')){
+          counts[e.stamp]++;
+        } else if(e && e.stamp === 'fail'){
+          const monday = new Date(date);
+          const day = monday.getDay();
+          monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
+          const weekKey = fmtKey(monday);
+          failsByWeek[weekKey] = (failsByWeek[weekKey] || 0) + 1;
+        } else if(!(isCurrentMonth && dd === now.getDate())){
+          counts.empty++;
+        }
       }
-      return Math.round((successCount/daysInMonth)*100);
+      Object.values(failsByWeek).forEach(failDays=>{
+        counts.rest += Math.min(2, failDays);
+        counts.fail += Math.max(0, failDays - 2);
+      });
+      const practiced = counts.success + counts.attempt;
+      counts.rate = monthlyGoal ? Math.min(100, Math.round((practiced/monthlyGoal)*100)) : 0;
+      return counts;
     }
     function computeMonthCompleteRate(){
       // 성공 or 완료 도장이 찍힌 날의 비율 (둘 중 하나만 있어도 인정)
@@ -717,17 +789,31 @@
       </div>
       <div class="stats-bar">
         <div class="stat-pill"><span class="stat-icon">⚝</span>연속 <span class="stat-val" id="streakVal${id}">0</span>일</div>
-        <div class="stat-pill"><span class="stat-icon">☀︎</span>이번달 성공률 <span class="stat-val" id="rateVal${id}">0%</span></div>
+        <button type="button" class="stat-pill" id="rateToggle${id}" aria-expanded="false" aria-controls="monthSummary${id}"><span class="stat-icon">☀︎</span>이번 달 실천률 <span class="stat-val" id="rateVal${id}">0%</span></button>
+      </div>
+      <div class="month-summary" id="monthSummary${id}" hidden>
+        <div class="month-summary-grid">
+          <div class="summary-item"><span class="summary-label">성공</span><span class="summary-value" id="summarySuccess${id}">0일</span></div>
+          <div class="summary-item"><span class="summary-label">완료</span><span class="summary-value" id="summaryAttempt${id}">0일</span></div>
+          <div class="summary-item"><span class="summary-label">휴식</span><span class="summary-value" id="summaryRest${id}">0일</span></div>
+          <div class="summary-item"><span class="summary-label">실패</span><span class="summary-value" id="summaryFail${id}">0일</span></div>
+        </div>
+        <div class="summary-note" id="summaryNote${id}">주 2회 실패 도장은 휴식으로 반영</div>
       </div>
       <div class="weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
       <div class="grid-wrap">
         <div class="grid" id="grid${id}"></div>
         <div class="month-stamp" id="monthStamp${id}">
-          <div class="stamp-ring"><span class="stamp-big">✷</span>이번 달<br>성공 도장 완성!</div>
+          <div class="stamp-ring">
+            <span class="stamp-big">✷</span>
+            <strong class="stamp-wow">와, 해냈다!</strong>
+            <span class="stamp-sub">이번 달 성공 도장 완성!</span>
+          </div>
         </div>
       </div>
       <div class="panel">
         <div class="panel-date" id="panelDate${id}"></div>
+        <div class="stamp-manage-row"><button type="button" class="sticker-manage-btn" id="stickerManageBtn${id}" aria-pressed="false">스티커 관리</button></div>
         <div class="stamp-controls">
           <div class="stamp-slot success">
             <div class="stamp-slot-label">${TYPE_LABEL.success}</div>
@@ -775,6 +861,28 @@
     const feelingInput = col.querySelector('#feelingInput'+id);
     const streakVal = col.querySelector('#streakVal'+id);
     const rateVal = col.querySelector('#rateVal'+id);
+    const rateToggle = col.querySelector('#rateToggle'+id);
+    const monthSummary = col.querySelector('#monthSummary'+id);
+    const summarySuccess = col.querySelector('#summarySuccess'+id);
+    const summaryAttempt = col.querySelector('#summaryAttempt'+id);
+    const summaryRest = col.querySelector('#summaryRest'+id);
+    const summaryFail = col.querySelector('#summaryFail'+id);
+    const summaryNote = col.querySelector('#summaryNote'+id);
+    const stickerManageBtn = col.querySelector('#stickerManageBtn'+id);
+    let stickerManageMode = false;
+
+    rateToggle.addEventListener('click', ()=>{
+      const willOpen = monthSummary.hidden;
+      monthSummary.hidden = !willOpen;
+      rateToggle.setAttribute('aria-expanded', String(willOpen));
+    });
+    stickerManageBtn.addEventListener('click', ()=>{
+      stickerManageMode = !stickerManageMode;
+      col.classList.toggle('sticker-managing', stickerManageMode);
+      stickerManageBtn.classList.toggle('is-active', stickerManageMode);
+      stickerManageBtn.textContent = stickerManageMode ? '관리 완료' : '스티커 관리';
+      stickerManageBtn.setAttribute('aria-pressed', String(stickerManageMode));
+    });
 
     function playStampCelebration(type, key){
       if(type !== 'success' && type !== 'attempt' && type !== 'fail') return;
@@ -840,7 +948,9 @@
         thumb.className = 'sticker-thumb' + ((entry.stamp===type && entry.stickerId===s.id) ? ' is-chosen' : '');
         thumb.innerHTML = '<img src="'+s.data+'" alt="스티커">';
         thumb.title = '눌러서 이 날에 찍기';
-        thumb.addEventListener('click', ()=> setStamp(type, s.id));
+        thumb.addEventListener('click', ()=>{
+          if(!stickerManageMode) setStamp(type, s.id);
+        });
         const delX = document.createElement('span'); delX.className = 'del-x'; delX.textContent = '×';
         delX.addEventListener('click', (e)=>{
           e.stopPropagation();
@@ -857,11 +967,23 @@
     }
 
     function renderStats(){
+      const monthStats = computeMonthStats();
       streakVal.textContent = computeStreak();
-      rateVal.textContent = computeMonthRate() + '%';
+      rateVal.textContent = monthStats.rate + '%';
+      summarySuccess.textContent = monthStats.success + '일';
+      summaryAttempt.textContent = monthStats.attempt + '일';
+      summaryRest.textContent = monthStats.rest + '일';
+      summaryFail.textContent = monthStats.fail + '일';
+      summaryNote.textContent = '월 목표 ' + monthStats.monthlyGoal + '일 · 주 2회 실패 도장은 휴식으로 반영';
       const monthStampEl = col.querySelector('#monthStamp'+id);
       if(monthStampEl){
-        monthStampEl.classList.toggle('show', computeMonthCompleteRate() === 100);
+        const viewedMonthEnd = new Date(cur.getFullYear(), cur.getMonth()+1, 0);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        viewedMonthEnd.setHours(0,0,0,0);
+        // 목표를 일찍 채워도 대형 도장은 말일이 된 뒤에만 공개한다.
+        const monthHasFinished = today >= viewedMonthEnd;
+        monthStampEl.classList.toggle('show', monthStats.rate === 100 && monthHasFinished);
       }
     }
 
